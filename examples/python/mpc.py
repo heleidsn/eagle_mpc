@@ -15,7 +15,7 @@ from eagle_mpc.utils.plots import PlotControlsGroup, showPlots
 dt = 10  # ms
 useSquash = True  # False
 robotName = 'hexacopter370_flying_arm_3'
-trajectoryName = 'eagle_catch_nc'
+trajectoryName = 'hover'
 # trajectoryName = 'displacement'
 mpcName = 'carrot'
 
@@ -65,6 +65,7 @@ for i in range(0, int(problem.T * dt * 1.2)):
     mpcController.solver.solve(
         mpcController.solver.xs, mpcController.solver.us, mpcController.iters)
     end = time.time()
+    # print('solve time: ', end - start)
     solveTime.append(end - start)
     control = np.copy(mpcController.solver.us_squash[0])
     simulator.simulateStep(control)

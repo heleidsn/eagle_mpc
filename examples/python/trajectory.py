@@ -29,7 +29,10 @@ else:
     solver = crocoddyl.SolverBoxFDDP(problem)
 
 solver.setCallbacks([crocoddyl.CallbackVerbose()])
+start_time = time.time()
 solver.solve([], [], maxiter=100)
+end_time = time.time()
+print(f"Time taken to solve the problem: {end_time - start_time} seconds")
 
 # if WITHDISPLAY:
 #     robot = example_robot_data.load(trajectory.robot_model.name)
