@@ -15,7 +15,7 @@ class AerialSimulator():
             self.robotState, self.platformParams.tau_f)
         self.difAM = crocoddyl.DifferentialActionModelFreeFwdDynamics(
             self.robotState, self.actuationModel, crocoddyl.CostModelSum(self.robotState, self.actuationModel.nu))
-        self.intAM = crocoddyl.IntegratedActionModelRK(self.difAM, self.dt)
+        self.intAM = crocoddyl.IntegratedActionModelRK4(self.difAM, self.dt)
         self.intAD = self.intAM.createData()
 
         self.x0 = x0
