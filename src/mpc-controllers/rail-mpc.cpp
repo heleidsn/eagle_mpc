@@ -55,6 +55,22 @@ RailMpc::RailMpc(const std::vector<Eigen::VectorXd>& state_ref, const std::size_
             "to 1e-1");
         control_weight_ = 1e-1;
     }
+
+    try {
+        control_reference_ = converter<Eigen::VectorXd>::convert(
+            params_server_->getParam<std::string>("mpc_controller/control_reference"));
+            
+        std::cout << "control_reference_ = \n" << control_reference_.transpose() << std::endl;
+
+    } catch (const std::exception& e) {
+        EMPC_DEBUG(
+            "The following key: 'mpc_controller/control_reference' has not been found in the parameters server. Set "
+            "to zero vector");
+        control_reference_ = Eigen::VectorXd::Zero(actuation_->get_nu());  // 默认值为零向量
+    }
+    // print control reference
+    // EMPC_DEBUG("Control reference: " << control_reference_.transpose());
+
     createProblem();
 
     update_vars_.state_ref = robot_state_->zero();
@@ -144,6 +160,10 @@ boost::shared_ptr<crocoddyl::CostModelSum> RailMpc::createCosts() const
 
     boost::shared_ptr<crocoddyl::ResidualModelControl> control_residual =
         boost::make_shared<crocoddyl::ResidualModelControl>(robot_state_, actuation_->get_nu());
+
+    // add by Lei He
+    control_residual->set_reference(control_reference_);  // 设置参考控制输入
+
     boost::shared_ptr<crocoddyl::CostModelResidual> control_cost =
         boost::make_shared<crocoddyl::CostModelResidual>(robot_state_, control_residual);
     costs->addCost("control", control_cost, control_weight_, true);
@@ -181,8 +201,8 @@ void RailMpc::computeStateReference(const std::size_t& time)
     update_vars_.idx_state = std::size_t(std::upper_bound(t_ref_.begin(), t_ref_.end(), time) - t_ref_.begin());
     if (update_vars_.idx_state >= state_ref_.size()) {
         update_vars_.state_ref                        = robot_state_->zero();
-        update_vars_.state_ref.head(robot_model_->nq) = state_ref_.back().head(robot_model_->nq);
-        update_vars_.quat_hover = Eigen::Quaterniond(state_ref_.back()(6), 0.0, 0.0, state_ref_.back()(5));
+        update_vars_.state_ref.head(robot_model_->nq) = state_ref_.back().head(robot_model_->nq);           // 保持最后时刻的位置和姿态
+        update_vars_.quat_hover = Eigen::Quaterniond(state_ref_.back()(6), 0.0, 0.0, state_ref_.back()(5)); // 保持yaw角度不变，roll和pitch为0
         update_vars_.quat_hover.normalize();
         update_vars_.state_ref(5) = update_vars_.quat_hover.z();
         update_vars_.state_ref(6) = update_vars_.quat_hover.w();

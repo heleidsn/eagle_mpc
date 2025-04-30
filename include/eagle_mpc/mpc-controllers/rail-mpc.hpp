@@ -46,6 +46,7 @@ class RailMpc : public MpcAbstract
     Eigen::VectorXd state_activation_weights_;
     double          state_weight_;
     double          control_weight_;
+    Eigen::VectorXd control_reference_;
 
     struct UpdateVars {
         std::size_t        node_time;
