@@ -24,7 +24,7 @@ boost::shared_ptr<Trajectory> Trajectory::create()
 // [Boks] utility function
 void printParams(const std::map<std::string, std::string>& params)
 {
-    cout << "[Boks] printing params from parser.get_params(): " << std::endl;
+    // cout << "[Boks] printing params from parser.get_params(): " << std::endl;
     for (const auto& pair : params) {
         std::cout << "[Boks] " << pair.first << " = " << pair.second << std::endl;
     }
@@ -35,12 +35,12 @@ void Trajectory::autoSetup(const std::string& yaml_path)
     ParserYaml parser(yaml_path);
     params_server_ = boost::make_shared<ParamsServer>(parser.get_params());
 
-    printParams(parser.get_params());
+    // printParams(parser.get_params());
 
     std::string prefix_robot = "robot/";
     robot_model_path_        = getUrdfPath(params_server_->getParam<std::string>(prefix_robot + "urdf"));
 
-    cout << "[Boks] robot_model_path_: " << robot_model_path_ << std::endl;
+    // cout << "[Boks] robot_model_path_: " << robot_model_path_ << std::endl;
 
     pinocchio::Model model;
     pinocchio::urdf::buildModel(robot_model_path_, pinocchio::JointModelFreeFlyer(), model);
@@ -57,7 +57,7 @@ void Trajectory::autoSetup(const std::string& yaml_path)
         problem_params_.use_squash = false;
         problem_params_.dt         = 0;
         problem_params_.integrator = "";
-        cout << "[Boks] trajectory.cpp get params exception " << e.what() << "\n";
+        // cout << "[Boks] trajectory.cpp get params exception " << e.what() << "\n";
 
         EMPC_DEBUG("Problem params not found. If not in the Yaml file, specify when call createProblem()");
     }
