@@ -48,6 +48,12 @@ class RailMpc : public MpcAbstract
     double          control_weight_;
     Eigen::VectorXd control_reference_;
 
+    // State limits related variables
+    double          state_limits_weight_;
+    Eigen::VectorXd state_limits_act_weights_;
+    Eigen::VectorXd state_limits_u_bound_;
+    Eigen::VectorXd state_limits_l_bound_;
+
     struct UpdateVars {
         std::size_t        node_time;
         Eigen::VectorXd    state_ref;

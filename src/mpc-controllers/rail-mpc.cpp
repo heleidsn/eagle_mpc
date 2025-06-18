@@ -71,6 +71,61 @@ RailMpc::RailMpc(const std::vector<Eigen::VectorXd>& state_ref, const std::size_
     // print control reference
     // EMPC_DEBUG("Control reference: " << control_reference_.transpose());
 
+    // Load state limits parameters
+    try {
+        state_limits_weight_ = params_server_->getParam<double>("mpc_controller/rail_state_limits_weight");
+    } catch (const std::exception& e) {
+        EMPC_DEBUG(
+            "The following key: 'mpc_controller/rail_state_limits_weight' has not been found in the parameters server. Set "
+            "to 100");
+        state_limits_weight_ = 100;
+    }
+
+    try {
+        state_limits_act_weights_ = converter<Eigen::VectorXd>::convert(
+            params_server_->getParam<std::string>("mpc_controller/rail_state_limits_act_weights"));
+    } catch (const std::exception& e) {
+        EMPC_DEBUG(
+            "The following key: 'mpc_controller/rail_state_limits_act_weights' has not been found in the parameters "
+            "server. Set to unitary vector");
+        state_limits_act_weights_ = Eigen::VectorXd::Ones(robot_state_->get_ndx());
+    }
+    if (state_limits_act_weights_.size() != robot_state_->get_ndx()) {
+        std::runtime_error("RailMPC: the dimension for the state limits activation weights vector is " +
+                           std::to_string(state_limits_act_weights_.size()) + ", should be " +
+                           std::to_string(robot_state_->get_ndx()));
+    }
+
+    try {
+        state_limits_l_bound_ = converter<Eigen::VectorXd>::convert(
+            params_server_->getParam<std::string>("mpc_controller/rail_state_limits_l_bound"));
+    } catch (const std::exception& e) {
+        EMPC_DEBUG(
+            "The following key: 'mpc_controller/rail_state_limits_l_bound' has not been found in the parameters server. Set "
+            "to zero vector");
+        state_limits_l_bound_ = Eigen::VectorXd::Zero(robot_state_->get_ndx());
+    }
+    if (state_limits_l_bound_.size() != robot_state_->get_ndx()) {
+        std::runtime_error("RailMPC: the dimension for the lower limits vector is " +
+                           std::to_string(state_limits_l_bound_.size()) + ", should be " +
+                           std::to_string(robot_state_->get_ndx()));
+    }
+
+    try {
+        state_limits_u_bound_ = converter<Eigen::VectorXd>::convert(
+            params_server_->getParam<std::string>("mpc_controller/rail_state_limits_u_bound"));
+    } catch (const std::exception& e) {
+        EMPC_DEBUG(
+            "The following key: 'mpc_controller/rail_state_limits_u_bound' has not been found in the parameters server. Set "
+            "to zero vector");
+        state_limits_u_bound_ = Eigen::VectorXd::Zero(robot_state_->get_ndx());
+    }
+    if (state_limits_u_bound_.size() != robot_state_->get_ndx()) {
+        std::runtime_error("RailMPC: the dimension for the upper limits vector is " +
+                           std::to_string(state_limits_u_bound_.size()) + ", should be " +
+                           std::to_string(robot_state_->get_ndx()));
+    }
+
     createProblem();
 
     update_vars_.state_ref = robot_state_->zero();
@@ -167,6 +222,17 @@ boost::shared_ptr<crocoddyl::CostModelSum> RailMpc::createCosts() const
     boost::shared_ptr<crocoddyl::CostModelResidual> control_cost =
         boost::make_shared<crocoddyl::CostModelResidual>(robot_state_, control_residual);
     costs->addCost("control", control_cost, control_weight_, true);
+
+    // Add state limits cost
+    crocoddyl::ActivationBounds state_limit_bounds(state_limits_l_bound_, state_limits_u_bound_, 1);
+    boost::shared_ptr<crocoddyl::ActivationModelWeightedQuadraticBarrier> state_limits_activation =
+        boost::make_shared<crocoddyl::ActivationModelWeightedQuadraticBarrier>(state_limit_bounds,
+                                                                               state_limits_act_weights_);
+    boost::shared_ptr<crocoddyl::ResidualModelState> state_limit_residual =
+        boost::make_shared<crocoddyl::ResidualModelState>(robot_state_, robot_state_->zero(), actuation_->get_nu());
+    boost::shared_ptr<crocoddyl::CostModelResidual> state_limit_cost =
+        boost::make_shared<crocoddyl::CostModelResidual>(robot_state_, state_limits_activation, state_limit_residual);
+    costs->addCost("state_limits", state_limit_cost, state_limits_weight_, true);
 
     return costs;
 }
