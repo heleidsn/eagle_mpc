@@ -77,8 +77,8 @@ RailMpc::RailMpc(const std::vector<Eigen::VectorXd>& state_ref, const std::size_
     } catch (const std::exception& e) {
         EMPC_DEBUG(
             "The following key: 'mpc_controller/rail_state_limits_weight' has not been found in the parameters server. Set "
-            "to 100");
-        state_limits_weight_ = 100;
+            "to 0");
+        state_limits_weight_ = 0;
     }
 
     try {

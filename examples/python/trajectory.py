@@ -41,12 +41,13 @@ print(f"Time taken to solve the problem: {end_time - start_time} seconds")
 #     # display = crocoddyl.GepettoDisplay(robot)
 #     display.displayFromSolver(solver)
 
-if WITHDISPLAY:
+if True:
     robot = example_robot_data.load(trajectory.robot_model.name)
 
     rate = -1
     freq = 1
     cameraTF = [-0.03, 4.4, 2.3, 0, 0.7071, 0, 0.7071]
+    # cameraTF = None
 
     try:
         import gepetto
