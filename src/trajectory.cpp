@@ -126,10 +126,19 @@ boost::shared_ptr<crocoddyl::ShootingProblem> Trajectory::createProblem(const st
     boost::shared_ptr<crocoddyl::ActionModelAbstract>              terminal_model;
 
     bool last_duration0 = false;
+    boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> terminal_dam;
+
+    // list all stages
     for (auto stage = stages_.begin(); stage != stages_.end(); ++stage) {
+        EMPC_INFO("Stage: ", (*stage)->get_name());
+    }
+    
+    for (auto stage = stages_.begin(); stage != stages_.end(); ++stage) {
+        // create differential action model (dam)
         boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> dam =
             dam_factory_->create(has_contact_, squash, *stage);
-
+        
+        // create integrated action model (iam)
         boost::shared_ptr<crocoddyl::ActionModelAbstract> iam = iam_factory_->create(integration_method, dt, dam);
 
         std::size_t n_knots;

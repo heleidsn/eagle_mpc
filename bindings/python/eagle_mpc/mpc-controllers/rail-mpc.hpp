@@ -22,6 +22,10 @@ void exposeRailMpc()
     bp::register_ptr_to_python<boost::shared_ptr<RailMpc>>();
     bp::class_<RailMpc, bp::bases<MpcAbstract>>(
         "RailMpc", bp::init<const std::vector<Eigen::VectorXd>&, const std::size_t, const std::string&>())
+        .def(bp::init<const std::vector<Eigen::VectorXd>&, 
+                      const std::vector<Eigen::VectorXd>&,
+                      const std::size_t, 
+                      const std::string&>())
         .def("createProblem", &RailMpc::createProblem, bp::args("self"))
         .def("updateProblem", &RailMpc::updateProblem, bp::args("self", "currentTime"))
         .add_property("state_ref",

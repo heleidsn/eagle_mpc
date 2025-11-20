@@ -49,9 +49,28 @@ void Stage::autoSetup(const std::string&                        path_to_stages,
         EMPC_DEBUG("Stage: ", name_, " DOES NOT HAVE contacts");
     }
 
+    // Get dt for weight scaling
+    double dt_weight_factor = 1.0;
+
+    try {
+        int dt = server->getParam<int>("problem_params/dt");
+        if (dt > 0) {
+            double dt_s = double(dt) / 1000.0;  // Convert dt from milliseconds to seconds
+            dt_weight_factor = dt_s;            // Proportional to dt: larger dt needs larger weight
+            EMPC_ERROR("Stage ", name_, ": applying dt-based weight scaling factor = ", dt_weight_factor, 
+                       " (dt = ", dt, "ms = ", dt_s, "s)");
+        }
+    } catch (const std::exception& e) {
+        EMPC_ERROR("Could not retrieve dt for weight scaling, using default factor = 1.0. Error: ", e.what());
+    }
+
     std::vector<std::string> cost_names = converter<std::vector<std::string>>::convert(stage.at("costs"));
     for (auto cost_name : cost_names) {
         double weight = server->getParam<double>(path_to_stage + "costs/" + cost_name + "/weight");
+        
+        // Apply dt-dependent weight scaling
+        double scaled_weight = weight * dt_weight_factor;
+        
         double active = false;
         try {
             server->getParam<double>(path_to_stage + "costs/" + cost_name + "/active");
@@ -63,10 +82,11 @@ void Stage::autoSetup(const std::string&                        path_to_stages,
         boost::shared_ptr<crocoddyl::CostModelAbstract> cost = residual_factory_->create(
             path_to_stage + "costs/" + cost_name + "/", server, trajectory_->get_robot_state(),
             trajectory_->get_actuation()->get_nu(), cost_type);
-        costs_->addCost(cost_name, cost, weight, active);
+        costs_->addCost(cost_name, cost, scaled_weight, active);
         cost_types_.insert({cost_name, cost_type});
 
-        EMPC_DEBUG("Stage ", name_, ": added cost ", cost_name);
+        EMPC_DEBUG("Stage ", name_, ": added cost ", cost_name, " with original weight ", weight, 
+                   " scaled to ", scaled_weight, " (dt_factor = ", dt_weight_factor, ")");
     }
 }
 

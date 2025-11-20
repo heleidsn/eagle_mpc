@@ -25,6 +25,10 @@ class RailMpc : public MpcAbstract
 {
     public:
     RailMpc(const std::vector<Eigen::VectorXd>& state_ref, const std::size_t dt_ref, const std::string& yaml_path);
+    RailMpc(const std::vector<Eigen::VectorXd>& state_ref, 
+            const std::vector<Eigen::VectorXd>& control_ref,
+            const std::size_t dt_ref, 
+            const std::string& yaml_path);
 
     virtual ~RailMpc();
 
@@ -39,9 +43,12 @@ class RailMpc : public MpcAbstract
     void                                       updateContactCosts(const std::size_t& idx);
     void                                       updateFreeCosts(const std::size_t& idx);
     void                                       computeStateReference(const std::size_t& time);
+    void                                       computeControlReference(const std::size_t& time);
 
     std::vector<Eigen::VectorXd> state_ref_;
+    std::vector<Eigen::VectorXd> control_ref_;  // Control reference from planner
     std::vector<std::size_t>     t_ref_;
+    bool                         use_planner_control_;  // Flag to use planner control or solver control
 
     Eigen::VectorXd state_activation_weights_;
     double          state_weight_;
